@@ -1,0 +1,45 @@
+package com.cyberstream;
+
+import io.quarkus.logging.Log;
+import io.smallrye.reactive.messaging.annotations.Blocking;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@ApplicationScoped
+public class NetworkMetricConsumer {
+
+    @Inject
+    ObjectMapper objectMapper;
+
+    @Inject
+    DetectionRules detectionRules;
+
+    @Incoming("network-metrics")
+    @Blocking
+    @Transactional
+    public void consume(String message) {
+        try {
+            NetworkMetricEvent event = objectMapper.readValue(message, NetworkMetricEvent.class);
+
+            NetworkMetricEntity entity = new NetworkMetricEntity();
+            entity.device = event.device();
+            entity.timestamp = event.timestamp();
+            entity.cpu = event.cpu();
+            entity.memory = event.memory();
+            entity.wanMbps = event.wanMbps();
+            entity.vpn = event.vpn();
+            entity.connectedClients = event.connectedClients();
+            entity.latencyMs = event.latencyMs();
+            entity.persist();
+            detectionRules.evaluate(event);
+
+            Log.infof("metrica persistida: device=%s cpu=%d mem=%d wanMbps=%.2f",
+                    event.device(), event.cpu(), event.memory(), event.wanMbps());
+        } catch (Exception e) {
+            Log.errorf(e, "error procesando mensaje de network.metrics: %s", message);
+        }
+    }
+}
