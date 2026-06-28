@@ -5,7 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
 import jakarta.inject.Inject;
-
+import io.micrometer.core.instrument.MeterRegistry;
 
 @ApplicationScoped
 public class DetectionRules {
@@ -17,6 +17,9 @@ public class DetectionRules {
 
     @Inject
     com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
+    @Inject
+    MeterRegistry registry;
 
     @Transactional
     public void evaluate(NetworkMetricEvent event) {
@@ -38,6 +41,7 @@ public class DetectionRules {
         alert.message = message;
         alert.timestamp = Instant.now();
         alert.persist();
+        registry.counter("cyberstream_alerts_total", "severity", severity, "event", eventType).increment();
         try {
             var payload = objectMapper.createObjectNode();
             payload.put("type", "alert");

@@ -8,6 +8,7 @@ import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.micrometer.core.instrument.MeterRegistry;
 
 @ApplicationScoped
 public class NetworkMetricConsumer {
@@ -18,10 +19,14 @@ public class NetworkMetricConsumer {
     @Inject
     DetectionRules detectionRules;
 
+    @Inject
+    MeterRegistry registry;
+
     @Incoming("network-metrics")
     @Blocking
     @Transactional
     public void consume(String message) {
+        registry.counter("cyberstream_metrics_processed_total").increment();
         try {
             NetworkMetricEvent event = objectMapper.readValue(message, NetworkMetricEvent.class);
 
