@@ -1,10 +1,12 @@
 package com.cyberstream;
 
 import io.smallrye.jwt.build.Jwt;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class TokenGeneratorTest {
     @Test
+    @Disabled("Herramienta manual para generar un token de prueba localmente; requiere privateKey.pem, que no existe en CI a proposito (no se versiona).")
     void generateToken() {
         String token = Jwt.issuer("https://cyberstream.local/issuer")
                 .subject("collector-test-user")
