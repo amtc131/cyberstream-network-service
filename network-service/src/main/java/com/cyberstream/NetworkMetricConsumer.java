@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 @ApplicationScoped
 public class NetworkMetricConsumer {
@@ -35,6 +36,10 @@ public class NetworkMetricConsumer {
             entity.latencyMs = event.latencyMs();
             entity.persist();
             detectionRules.evaluate(event);
+            ObjectNode wsPayload = objectMapper.createObjectNode();
+            wsPayload.put("type", "metric");
+            wsPayload.set("data", objectMapper.valueToTree(event));
+            MetricsWebSocket.broadcast(objectMapper.writeValueAsString(wsPayload));
 
             Log.infof("metrica persistida: device=%s cpu=%d mem=%d wanMbps=%.2f",
                     event.device(), event.cpu(), event.memory(), event.wanMbps());
